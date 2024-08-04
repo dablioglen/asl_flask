@@ -34,7 +34,7 @@
         #output_container {
             position: relative;
             width: 100%;
-            aspect-ratio: 3 / 4; /* Changed to 3:4 aspect ratio for a taller view */
+            aspect-ratio: 3 / 4;
             margin-bottom: 20px;
             border: 1px solid #ccc;
         }
@@ -45,6 +45,9 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+        }
+        #webcam {
+            transform: scaleX(-1);
         }
         #prediction_overlay {
             position: absolute;
@@ -66,12 +69,12 @@
             box-sizing: border-box;
         }
         #voiceSelect {
-        padding: 10px;
-        font-size: 16px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        background-color: white;
-        flex-grow: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: white;
+            flex-grow: 1;
         }
         .button-container {
             display: flex;
@@ -120,7 +123,6 @@
 </head>
 <body>
     <div class="container">
-       
         <div id="output_container">
             <video id="webcam" autoplay playsinline></video>
             <canvas id="output_canvas"></canvas>
@@ -172,15 +174,27 @@
     function onResults(results) {
         ctx.save();
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw the mirrored video frame
+        ctx.scale(-1, 1);
+        ctx.translate(-canvas.width, 0);
         ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
         
         if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
             lastHandDetectionTime = Date.now();
             noHandOverlay.style.opacity = '0';
             for (const landmarks of results.multiHandLandmarks) {
+                // Draw mirrored hand landmarks
+                ctx.scale(-1, 1);
+                ctx.translate(-canvas.width, 0);
                 drawConnectors(ctx, landmarks, HAND_CONNECTIONS, {color: '#00FF00', lineWidth: 5});
                 drawLandmarks(ctx, landmarks, {color: '#FF0000', lineWidth: 2});
-                sendLandmarksToServer(landmarks);
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                
+                // Mirror the landmarks before sending to the server
+                const mirroredLandmarks = landmarks.map(l => ({x: 1 - l.x, y: l.y, z: l.z}));
+                sendLandmarksToServer(mirroredLandmarks);
             }
         } else {
             if (Date.now() - lastHandDetectionTime > noHandThreshold) {
@@ -230,23 +244,23 @@
             currentPrediction = '';
         }
     }
-// Initialize ResponsiveVoice
-if (responsiveVoice) {
-    console.log("ResponsiveVoice is ready");
-    
-    // Populate voice list
-    const voices = responsiveVoice.getVoices();
-    const voiceSelect = document.getElementById('voiceSelect');
-    voiceSelect.innerHTML = '<option value="">Select a voice</option>';
-    
-    voices.forEach((voice) => {
-        const option = document.createElement('option');
-        option.textContent = voice.name;
-        option.value = voice.name;
-        voiceSelect.appendChild(option);
-    });
-}
 
+    // Initialize ResponsiveVoice
+    if (responsiveVoice) {
+        console.log("ResponsiveVoice is ready");
+        
+        // Populate voice list
+        const voices = responsiveVoice.getVoices();
+        const voiceSelect = document.getElementById('voiceSelect');
+        voiceSelect.innerHTML = '<option value="">Select a voice</option>';
+        
+        voices.forEach((voice) => {
+            const option = document.createElement('option');
+            option.textContent = voice.name;
+            option.value = voice.name;
+            voiceSelect.appendChild(option);
+        });
+    }
 
     addButton.addEventListener('click', () => {
         if (currentPrediction) {
@@ -262,15 +276,16 @@ if (responsiveVoice) {
     });
 
     audioButton.addEventListener('click', () => {
-    const text = textInput.value;
-    const selectedVoice = voiceSelect.value;
-    
-    if (text && selectedVoice) {
-        responsiveVoice.speak(text, selectedVoice);
-    } else {
-        console.log("Please enter text and select a voice");
-    }
-});
+        const text = textInput.value;
+        const selectedVoice = voiceSelect.value;
+        
+        if (text && selectedVoice) {
+            responsiveVoice.speak(text, selectedVoice);
+        } else {
+            console.log("Please enter text and select a voice");
+        }
+    });
+
     spaceButton.addEventListener('click', () => {
         textInput.value += ' ';
     });
