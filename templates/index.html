@@ -34,14 +34,15 @@
         #output_container {
             position: relative;
             width: 100%;
-            aspect-ratio: 3 / 4;
-            margin-bottom: 20px;
+            padding-top: 75%; /* 4:3 aspect ratio */
+            margin-bottom: 50px;
             border: 1px solid #ccc;
+            overflow: hidden;
         }
         #webcam, #output_canvas {
             position: absolute;
-            left: 0;
             top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
             object-fit: cover;
@@ -130,6 +131,9 @@
             <div id="no_hand_overlay">No hand detected<br>Please show your right hand</div>
         </div>
         <textarea id="textInput" placeholder="ACCEPTED/ADD TEXT HERE"></textarea>
+        </br>
+        </br>
+        </br>
         <div class="button-container">
             <button id="audioButton">Speak</button>
             <select id="voiceSelect">
@@ -171,7 +175,19 @@
 
     hands.onResults(onResults);
 
+    function updateCanvasSize() {
+        const aspectRatio = video.videoWidth / video.videoHeight;
+        const width = video.offsetWidth;
+        const height = width / aspectRatio;
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+    }
+
     function onResults(results) {
+        updateCanvasSize();
+        
         ctx.save();
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
@@ -215,6 +231,8 @@
             height: 480
         });
         camera.start();
+
+        video.addEventListener('loadedmetadata', updateCanvasSize);
     }
 
     startCamera();
@@ -299,15 +317,6 @@
             }
         }
     });
-
-    function resizeCanvas() {
-        const container = document.getElementById('output_container');
-        canvas.width = container.clientWidth;
-        canvas.height = container.clientHeight;
-    }
-
-    window.addEventListener('load', resizeCanvas);
-    window.addEventListener('resize', resizeCanvas);
     </script>
 </body>
 </html>
