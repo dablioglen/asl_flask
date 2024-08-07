@@ -1,6 +1,6 @@
 import json
 import numpy as np
-from tflite_runtime.interpreter import Interpreter
+import tensorflow as tf
 from flask import Flask, request, jsonify, render_template
 
 app = Flask(__name__)
@@ -8,10 +8,11 @@ app = Flask(__name__)
 # Load the label map
 with open('label_map.json', 'r') as f:
     label_map = json.load(f)
+
 inv_label_map = {str(v): k for k, v in label_map.items()}
 
 # Load TensorFlow Lite model
-interpreter = Interpreter(model_path='sign_language_model.tflite')
+interpreter = tf.lite.Interpreter(model_path='sign_language_model.tflite')
 interpreter.allocate_tensors()
 input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
