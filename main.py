@@ -1,6 +1,6 @@
 import json
 import numpy as np
-import tensorflow as tf
+from tflite_runtime.interpreter import Interpreter
 from flask import Flask, request, jsonify, render_template
 
 app = Flask(__name__)
@@ -8,11 +8,10 @@ app = Flask(__name__)
 # Load the label map
 with open('label_map.json', 'r') as f:
     label_map = json.load(f)
-
 inv_label_map = {str(v): k for k, v in label_map.items()}
 
 # Load TensorFlow Lite model
-interpreter = tf.lite.Interpreter(model_path='sign_language_model.tflite')
+interpreter = Interpreter(model_path='sign_language_model.tflite')
 interpreter.allocate_tensors()
 input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
@@ -41,7 +40,7 @@ def predict_landmarks(landmarks):
         return {'label': 'Error', 'confidence': 0.0}
 
 @app.route('/')
-def indx():
+def index():
     return render_template('index.html')
 
 @app.route('/predict', methods=['POST'])
@@ -56,6 +55,3 @@ def predict():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-
-    
